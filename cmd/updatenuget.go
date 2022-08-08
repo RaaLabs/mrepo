@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +34,7 @@ func init() {
 }
 
 func updateNugetPackage() {
-	xmlFile, err := os.Open(".csproj")
+	xmlFile, err := os.Open(".testcsproj")
 	if err != nil {
 	    fmt.Println(err)
     }
@@ -41,29 +42,38 @@ func updateNugetPackage() {
 	defer xmlFile.Close()
 
 	byteValue, _ := ioutil.ReadAll(xmlFile)
-	var propertyGroup PropertyGroup
-	xml.Unmarshal(byteValue, &propertyGroup)
+	var project Project
+	xml.Unmarshal(byteValue, &project)
 
-	var itemGroup ItemGroup
-	xml.unmarshal(byteValue, &itemGroup)
-
-	for i := 0; i < len(itemGroup.Items); i++ {
-		fmt.Println(itemGroup.Items[i].InnerXML)
+	fmt.Println(project)
+	fmt.Println(len(project.ItemGroup.PackageReferences))
+	for i := 0; i < len(project.ItemGroup.PackageReferences); i++ {
+		fmt.Println(project.ItemGroup.PackageReferences[i].Include)
+		fmt.Println(project.ItemGroup.PackageReferences[i].Version)
 	}
 }
 
-type CsProjFile struct {
+type Project struct {
 	XMLName xml.Name `xml:"Project"`
-	PropertyGroup []PropertyGroup `xml:"PropertyGroup"`
-	ItemGroup []ItemGroup `xml:"ItemGroup"`
+	Sdk string `xml:"Sdk,attr"`
+	PropertyGroup PropertyGroup `xml:"PropertyGroup"`
+	ItemGroup ItemGroup `xml:"ItemGroup"`
 }
 
 type PropertyGroup struct {
+	XMLName xml.Name `xml:"PropertyGroup"`
 	OutputType string `xml:"OutputType"`
 	TargetFramework string `xml:"TargetFramework"`
 	AssemblyName string `xml:"AssemblyName"`
 }
 
 type ItemGroup struct {
-	PackageReferences []PackageReference `xml:"PackageReference"` 
+	XMLName xml.Name `xml:"ItemGroup"`
+	PackageReferences []PackageReference `xml:"PackageReference"`
+}
+
+type PackageReference struct {
+	XMLName xml.Name `xml:"PackageReference"`
+	Include string `xml:"Include,attr"`
+	Version string `xml:"Version,attr"`
 }
