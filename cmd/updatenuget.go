@@ -34,7 +34,7 @@ func init() {
 
 func updateNugetPackage() {
 	xmlFile, err := os.Open(".csproj")
-		rr != nil {
+	if err != nil {
 	    fmt.Println(err)
     }
 
