@@ -98,13 +98,13 @@ func getCsprojFiles(dir string) []string {
 	return files
 }
 
-func updateCsProjFile(file string) {
-	xmlFile, err := os.Open(file)
+func updateCsProjFile(csProjFile string) {
+	currentCsProjFile, err := os.Open(csProjFile)
 	if err != nil {
 	    fmt.Println(err)
     }
-	defer xmlFile.Close()
-	byteValue, _ := ioutil.ReadAll(xmlFile)
+	defer currentCsProjFile.Close()
+	byteValue, _ := ioutil.ReadAll(currentCsProjFile)
 	var project Project
 	xml.Unmarshal(byteValue, &project)
 
@@ -112,6 +112,11 @@ func updateCsProjFile(file string) {
 		fmt.Println(project.ItemGroup.PackageReferences[i].Include)
 		fmt.Println(project.ItemGroup.PackageReferences[i].Version)
 	}
+
+	project.ItemGroup.PackageReferences[0].Version = "10.0.0"
+
+	updatedCsProjFile, _ := xml.MarshalIndent(project, "", "  ")
+	_ = ioutil.WriteFile(csProjFile, updatedCsProjFile, 0644)
 }
 
 type Project struct {
