@@ -1,3 +1,6 @@
+before:
+  hooks:
+    - go mod vendor
 builds:
   - binary: mrepo
     goos:
