@@ -1,0 +1,29 @@
+builds:
+  - binary: mrepo
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -mod=vendor
+
+release:
+  prerelease: auto
+
+universal_binaries:
+  - replace: true
+
+brews:
+  -
+    name: mrepo
+    homepage: "https://github.com/RaaLabs/mrepo"
+    tap:
+      owner: raalabs
+      name: homebrew-raalabs
+
+checksum:
+  name_template: 'checksums.txt'
