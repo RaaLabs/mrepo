@@ -12,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
 	"github.com/spf13/cobra"
 )
 
@@ -27,19 +26,21 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		nugetPackage, _ := cmd.Flags().GetString("nugetPackage")
+		packageVersion, _ := cmd.Flags().GetString("packageVersion")
 		repos, _ := cmd.Flags().GetString("repos")
 		fmt.Println("updatenuget called")
-		updateNugetPackage(nugetPackage, repos)
+		updateNugetPackage(nugetPackage, packageVersion, repos)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(updatenugetCmd)
 	updatenugetCmd.PersistentFlags().String("nugetPackage", "", "The nuget package to update")
+	updatenugetCmd.PersistentFlags().String("packageVersion", "", "The version to update the package to")
 	updatenugetCmd.PersistentFlags().String("repos", "", "Comma separated list of git repos to update")
 }
 
-func updateNugetPackage(nugetPackage string, repos string) {
+func updateNugetPackage(nugetPackage string, packageVersion string, repos string) {
 	tmpReposDir := createTmpFolder()
 	fmt.Println(tmpReposDir)
 
@@ -48,10 +49,10 @@ func updateNugetPackage(nugetPackage string, repos string) {
 
 		fmt.Println(repoDir)
 
-		projectFiles := getCsprojFiles(repoDir)
+		projectFiles := getCsprojFiles(repoDir, ".testcsproj")
 		for _, projectFile := range projectFiles {
 			fmt.Println(projectFile)
-			updateCsProjFile(projectFile)
+			updateCsProjFile(projectFile, nugetPackage, packageVersion)
 		}
 	}
 }
@@ -77,7 +78,7 @@ func cloneGitRepo(targetDir string, repoName string) string {
 	return repoDir
 }
 
-func getCsprojFiles(dir string) []string {
+func getCsprojFiles(dir string, suffix string) []string {
 	files := []string{}
 	err := filepath.Walk(
 		dir,
@@ -85,7 +86,7 @@ func getCsprojFiles(dir string) []string {
 			if err != nil {
 				return err
 			}
-			if !info.IsDir() && strings.HasSuffix(path, ".testcsproj") {
+			if !info.IsDir() && strings.HasSuffix(path, suffix) {
 				files = append(files, path)
 			}
 
@@ -98,11 +99,11 @@ func getCsprojFiles(dir string) []string {
 	return files
 }
 
-func updateCsProjFile(csProjFile string) {
+func updateCsProjFile(csProjFile string, nugetPackage string, packageVersion string) {
 	currentCsProjFile, err := os.Open(csProjFile)
 	if err != nil {
-	    fmt.Println(err)
-    }
+		fmt.Println(err)
+	}
 	defer currentCsProjFile.Close()
 	byteValue, _ := ioutil.ReadAll(currentCsProjFile)
 	var project Project
@@ -113,33 +114,33 @@ func updateCsProjFile(csProjFile string) {
 		fmt.Println(project.ItemGroup.PackageReferences[i].Version)
 	}
 
-	project.ItemGroup.PackageReferences[0].Version = "10.0.0"
+	project.ItemGroup.PackageReferences[0].Version = packageVersion
 
 	updatedCsProjFile, _ := xml.MarshalIndent(project, "", "  ")
 	_ = ioutil.WriteFile(csProjFile, updatedCsProjFile, 0644)
 }
 
 type Project struct {
-	XMLName xml.Name `xml:"Project"`
-	Sdk string `xml:"Sdk,attr"`
+	XMLName       xml.Name      `xml:"Project"`
+	Sdk           string        `xml:"Sdk,attr"`
 	PropertyGroup PropertyGroup `xml:"PropertyGroup"`
-	ItemGroup ItemGroup `xml:"ItemGroup"`
+	ItemGroup     ItemGroup     `xml:"ItemGroup"`
 }
 
 type PropertyGroup struct {
-	XMLName xml.Name `xml:"PropertyGroup"`
-	OutputType string `xml:"OutputType"`
-	TargetFramework string `xml:"TargetFramework"`
-	AssemblyName string `xml:"AssemblyName"`
+	XMLName         xml.Name `xml:"PropertyGroup"`
+	OutputType      string   `xml:"OutputType"`
+	TargetFramework string   `xml:"TargetFramework"`
+	AssemblyName    string   `xml:"AssemblyName"`
 }
 
 type ItemGroup struct {
-	XMLName xml.Name `xml:"ItemGroup"`
+	XMLName           xml.Name           `xml:"ItemGroup"`
 	PackageReferences []PackageReference `xml:"PackageReference"`
 }
 
 type PackageReference struct {
 	XMLName xml.Name `xml:"PackageReference"`
-	Include string `xml:"Include,attr"`
-	Version string `xml:"Version,attr"`
+	Include string   `xml:"Include,attr"`
+	Version string   `xml:"Version,attr"`
 }
