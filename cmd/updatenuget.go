@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
 	"github.com/spf13/cobra"
 )
 
@@ -110,11 +111,11 @@ func updateCsProjFile(csProjFile string, nugetPackage string, packageVersion str
 	xml.Unmarshal(byteValue, &project)
 
 	for i := 0; i < len(project.ItemGroup.PackageReferences); i++ {
-		fmt.Println(project.ItemGroup.PackageReferences[i].Include)
-		fmt.Println(project.ItemGroup.PackageReferences[i].Version)
+		if project.ItemGroup.PackageReferences[i].Include == nugetPackage {
+			project.ItemGroup.PackageReferences[i].Version = packageVersion
+			fmt.Println("Updated " + nugetPackage + " to " + packageVersion)
+		}
 	}
-
-	project.ItemGroup.PackageReferences[0].Version = packageVersion
 
 	updatedCsProjFile, _ := xml.MarshalIndent(project, "", "  ")
 	_ = ioutil.WriteFile(csProjFile, updatedCsProjFile, 0644)
